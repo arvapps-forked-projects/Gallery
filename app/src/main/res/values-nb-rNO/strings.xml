@@ -169,7 +169,7 @@
     <string name="show_recycle_bin_last">Vis papirkurven som siste element på hovedskjermen</string>
     <string name="allow_down_gesture">Tillat lukking av mediavisningen med en nedoverbevegelse</string>
     <string name="allow_one_to_one_zoom">Tillat å zoome 1:1 med to dobbeltrykk</string>
-    <string name="open_videos_on_separate_screen">Åpne alltid videoer på en separat skjerm med nye horisontale bevegelser</string>
+    <string name="open_videos_on_separate_screen">Spill videoer på en separat skjerm med horisontale bevegelser</string>
     <string name="show_notch">Vis flik hvis tilgjengelig</string>
     <string name="allow_rotating_gestures">Tillat rotering av bilder med fingerbevegelser</string>
     <string name="file_loading_priority">Fillastingsprioritet</string>
@@ -203,7 +203,26 @@
     <string name="extended_details">Utvidede detaljer</string>
     <string name="bottom_actions">Handlinger nederst</string>
     <string name="manage_bottom_actions">Behandle nedre handlingsknapper</string>
-    <string name="toggle_favorite">Favoritt av/på</string>
+    <string name="toggle_favorite">Slå av/på favoritt</string>
     <string name="toggle_file_visibility">Filsynlighet av/på</string>
     <string name="faq_16_text">Fra og med Android 11 kan du ikke lenger skjule/vise filer eller mapper, du kan heller ikke se de skjulte i galleriapper pga. systemrestriksjoner. Du må bruke en filbehandlingsapp for det.</string>
+    <string name="excluded_activity_placeholder">Ekskludering av mapper vil gjøre dem sammen med deres undermapper, skjulte bare i Fossify Gallery. De vil fortsatt være synlige i andre apper.
+\n
+\nHvis du vil skjule dem fra andre apper også, bruk Skjul-funksjonen.</string>
+    <string name="exclude_folder_description">Dette vil ekskludere valgte sammen med undermapper, bare fra Fossify Gallery. Ekskluderte mapper kan håndteres i Innstillinger.</string>
+    <plurals name="restore_confirmation">
+        <item quantity="one">Er du sikker på du vil gjenopprette %d fil?</item>
+        <item quantity="other">Er du sikker på du vil gjenopprette %d filer?</item>
+    </plurals>
+    <string name="playback_speed">Avspillingshastighet</string>
+    <string name="unsupported_format">Ikke-støttet format.</string>
+    <string name="keep_screen_on_fullscreen_photos">Hold skjermen på ved visning av bilder i fullskjermmodus</string>
+    <string name="full_storage_permission_required">Fossify Gallery trenger full tilgang for å vise alle dine bilder og videoer. Gå til Innstillinger &gt; Tillatelser &gt; Bilder og videoer &gt; Tillat alle.</string>
+    <string name="wallpaper">Bakgrunnsbilde</string>
+    <string name="force_landscape_reverse">Framtving landskap (omvendt)</string>
+    <string name="overwrite_original">Overskriv original</string>
+    <string name="video_no_sound">Denne videoen har ingen lyd</string>
+    <string name="open_system_default_player">Åpne standardspilleren</string>
+    <string name="open_in_app_player">Åpne spilleren i appen</string>
+    <string name="on_video_tap">Ved videotrykk</string>
 </resources>

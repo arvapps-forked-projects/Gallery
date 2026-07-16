@@ -5,23 +5,29 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
-import android.content.pm.ActivityInfo
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Icon
 import android.os.Bundle
 import android.os.Handler
+import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
-import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.core.graphics.drawable.toDrawable
 import androidx.exifinterface.media.ExifInterface
 import androidx.print.PrintHelper
 import androidx.viewpager.widget.ViewPager
@@ -32,10 +38,59 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
+import com.google.android.material.appbar.AppBarLayout
 import org.fossify.commons.dialogs.PropertiesDialog
 import org.fossify.commons.dialogs.RenameItemDialog
-import org.fossify.commons.extensions.*
-import org.fossify.commons.helpers.*
+import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
+import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.extensions.convertToBitmap
+import org.fossify.commons.extensions.formatSize
+import org.fossify.commons.extensions.getColoredDrawableWithColor
+import org.fossify.commons.extensions.getDataColumn
+import org.fossify.commons.extensions.getDoesFilePathExist
+import org.fossify.commons.extensions.getDuration
+import org.fossify.commons.extensions.getFilenameFromPath
+import org.fossify.commons.extensions.getFinalUriFromPath
+import org.fossify.commons.extensions.getImageResolution
+import org.fossify.commons.extensions.getIsPathDirectory
+import org.fossify.commons.extensions.getParentPath
+import org.fossify.commons.extensions.getProperBackgroundColor
+import org.fossify.commons.extensions.getResolution
+import org.fossify.commons.extensions.getUriMimeType
+import org.fossify.commons.extensions.handleDeletePasswordProtection
+import org.fossify.commons.extensions.handleLockedFolderOpening
+import org.fossify.commons.extensions.hasPermission
+import org.fossify.commons.extensions.hideKeyboard
+import org.fossify.commons.extensions.internalStoragePath
+import org.fossify.commons.extensions.isAStorageRootFolder
+import org.fossify.commons.extensions.isExternalStorageManager
+import org.fossify.commons.extensions.isGif
+import org.fossify.commons.extensions.isMediaFile
+import org.fossify.commons.extensions.isPortrait
+import org.fossify.commons.extensions.isRawFast
+import org.fossify.commons.extensions.isSvg
+import org.fossify.commons.extensions.isVideoFast
+import org.fossify.commons.extensions.needsStupidWritePermissions
+import org.fossify.commons.extensions.onGlobalLayout
+import org.fossify.commons.extensions.recycleBinPath
+import org.fossify.commons.extensions.rescanPaths
+import org.fossify.commons.extensions.scanPathRecursively
+import org.fossify.commons.extensions.showErrorToast
+import org.fossify.commons.extensions.toast
+import org.fossify.commons.extensions.tryGenericMimeType
+import org.fossify.commons.extensions.updateBrightness
+import org.fossify.commons.extensions.viewBinding
+import org.fossify.commons.helpers.FAVORITES
+import org.fossify.commons.helpers.IS_FROM_GALLERY
+import org.fossify.commons.helpers.NOMEDIA
+import org.fossify.commons.helpers.REAL_FILE_PATH
+import org.fossify.commons.helpers.REQUEST_EDIT_IMAGE
+import org.fossify.commons.helpers.REQUEST_SET_AS
+import org.fossify.commons.helpers.SORT_BY_RANDOM
+import org.fossify.commons.helpers.ensureBackgroundThread
+import org.fossify.commons.helpers.isRPlus
 import org.fossify.commons.models.FileDirItem
 import org.fossify.gallery.BuildConfig
 import org.fossify.gallery.R
@@ -45,18 +100,91 @@ import org.fossify.gallery.databinding.ActivityMediumBinding
 import org.fossify.gallery.dialogs.DeleteWithRememberDialog
 import org.fossify.gallery.dialogs.SaveAsDialog
 import org.fossify.gallery.dialogs.SlideshowDialog
-import org.fossify.gallery.extensions.*
+import org.fossify.gallery.extensions.config
+import org.fossify.gallery.extensions.favoritesDB
+import org.fossify.gallery.extensions.fixDateTaken
+import org.fossify.gallery.extensions.getFavoritePaths
+import org.fossify.gallery.extensions.getShortcutImage
+import org.fossify.gallery.extensions.handleMediaManagementPrompt
+import org.fossify.gallery.extensions.hideSystemUI
+import org.fossify.gallery.extensions.isDownloadsFolder
+import org.fossify.gallery.extensions.launchResizeImageDialog
+import org.fossify.gallery.extensions.launchSettings
+import org.fossify.gallery.extensions.mediaDB
+import org.fossify.gallery.extensions.movePathsInRecycleBin
+import org.fossify.gallery.extensions.openEditor
+import org.fossify.gallery.extensions.openPath
+import org.fossify.gallery.extensions.restoreRecycleBinPath
+import org.fossify.gallery.extensions.saveRotatedImageToFile
+import org.fossify.gallery.extensions.setAs
+import org.fossify.gallery.extensions.shareMediumPath
+import org.fossify.gallery.extensions.showFileOnMap
+import org.fossify.gallery.extensions.showSystemUI
+import org.fossify.gallery.extensions.toggleFileVisibility
+import org.fossify.gallery.extensions.tryCopyMoveFilesTo
+import org.fossify.gallery.extensions.tryDeleteFileDirItem
+import org.fossify.gallery.extensions.updateDBMediaPath
+import org.fossify.gallery.extensions.updateFavorite
+import org.fossify.gallery.extensions.updateFavoritePaths
 import org.fossify.gallery.fragments.PhotoFragment
 import org.fossify.gallery.fragments.VideoFragment
 import org.fossify.gallery.fragments.ViewPagerFragment
-import org.fossify.gallery.helpers.*
+import org.fossify.gallery.helpers.BOTTOM_ACTION_CHANGE_ORIENTATION
+import org.fossify.gallery.helpers.BOTTOM_ACTION_COPY
+import org.fossify.gallery.helpers.BOTTOM_ACTION_DELETE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_EDIT
+import org.fossify.gallery.helpers.BOTTOM_ACTION_MOVE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_PROPERTIES
+import org.fossify.gallery.helpers.BOTTOM_ACTION_RENAME
+import org.fossify.gallery.helpers.BOTTOM_ACTION_RESIZE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_ROTATE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SET_AS
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SHARE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SHOW_ON_MAP
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SLIDESHOW
+import org.fossify.gallery.helpers.BOTTOM_ACTION_TOGGLE_FAVORITE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_TOGGLE_VISIBILITY
+import org.fossify.gallery.helpers.ColorModeHelper
+import org.fossify.gallery.helpers.DefaultPageTransformer
+import org.fossify.gallery.helpers.FadePageTransformer
+import org.fossify.gallery.helpers.GO_TO_NEXT_ITEM
+import org.fossify.gallery.helpers.GO_TO_PREV_ITEM
+import org.fossify.gallery.helpers.HIDE_SYSTEM_UI_DELAY
+import org.fossify.gallery.helpers.IS_VIEW_INTENT
+import org.fossify.gallery.helpers.MAX_PRINT_SIDE_SIZE
+import org.fossify.gallery.helpers.PATH
+import org.fossify.gallery.helpers.PORTRAIT_PATH
+import org.fossify.gallery.helpers.RECYCLE_BIN
+import org.fossify.gallery.helpers.ROTATE_BY_ASPECT_RATIO
+import org.fossify.gallery.helpers.ROTATE_BY_DEVICE_ROTATION
+import org.fossify.gallery.helpers.ROTATE_BY_SYSTEM_SETTING
+import org.fossify.gallery.helpers.SHOW_ALL
+import org.fossify.gallery.helpers.SHOW_FAVORITES
+import org.fossify.gallery.helpers.SHOW_NEXT_ITEM
+import org.fossify.gallery.helpers.SHOW_PREV_ITEM
+import org.fossify.gallery.helpers.SHOW_RECYCLE_BIN
+import org.fossify.gallery.helpers.SKIP_AUTHENTICATION
+import org.fossify.gallery.helpers.SLIDESHOW_ANIMATION_FADE
+import org.fossify.gallery.helpers.SLIDESHOW_ANIMATION_NONE
+import org.fossify.gallery.helpers.SLIDESHOW_ANIMATION_SLIDE
+import org.fossify.gallery.helpers.SLIDESHOW_DEFAULT_INTERVAL
+import org.fossify.gallery.helpers.SLIDESHOW_FADE_DURATION
+import org.fossify.gallery.helpers.SLIDESHOW_SLIDE_DURATION
+import org.fossify.gallery.helpers.SLIDESHOW_START_ON_ENTER
+import org.fossify.gallery.helpers.TYPE_GIFS
+import org.fossify.gallery.helpers.TYPE_IMAGES
+import org.fossify.gallery.helpers.TYPE_PORTRAITS
+import org.fossify.gallery.helpers.TYPE_RAWS
+import org.fossify.gallery.helpers.TYPE_SVGS
+import org.fossify.gallery.helpers.TYPE_VIDEOS
+import org.fossify.gallery.helpers.getPermissionToRequest
 import org.fossify.gallery.models.Medium
 import org.fossify.gallery.models.ThumbnailItem
 import java.io.File
 import kotlin.math.min
 
 @Suppress("UNCHECKED_CAST")
-class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, ViewPagerFragment.FragmentListener {
+class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, ViewPagerFragment.FragmentListener {
     companion object {
         private const val REQUEST_VIEW_VIDEO = 1
         private const val SAVED_PATH = "current_path"
@@ -82,30 +210,33 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     private var mMediaFiles = ArrayList<Medium>()
     private var mFavoritePaths = ArrayList<String>()
     private var mIgnoredPaths = ArrayList<String>()
+    private var mOriginalBrightness: Float? = null
 
     private val binding by viewBinding(ActivityMediumBinding::inflate)
 
+    override val contentHolder: View
+        get() = binding.fragmentHolder
+
+    override val appBarLayout: AppBarLayout
+        get() = binding.mediumViewerAppbar
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        showTransparentTop = true
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+        setupEdgeToEdge(
+            padBottomSystem = listOf(binding.bottomActions.bottomActionsWrapper),
+        )
+
         setupOptionsMenu()
         refreshMenuItems()
 
         window.decorView.setBackgroundColor(getProperBackgroundColor())
-        binding.topShadow.layoutParams.height = statusBarHeight + actionBarHeight
-        checkNotchSupport()
         (MediaActivity.mMedia.clone() as ArrayList<ThumbnailItem>).filterIsInstanceTo(mMediaFiles, Medium::class.java)
 
-        handlePermission(getPermissionToRequest()) {
-            if (it) {
-                initViewPager(
-                    savedPath = savedInstanceState?.getString(SAVED_PATH).orEmpty()
-                )
-            } else {
-                toast(org.fossify.commons.R.string.no_storage_permissions)
-                finish()
-            }
+        requestMediaPermissions {
+            initViewPager(
+                savedPath = savedInstanceState?.getString(SAVED_PATH).orEmpty()
+            )
         }
 
         initFavorites()
@@ -118,20 +249,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             return
         }
 
-        if (config.bottomActions) {
-            window.navigationBarColor = Color.TRANSPARENT
-        } else {
-            setTranslucentNavigation()
-        }
-
         initBottomActions()
-
-        if (config.maxBrightness) {
-            val attributes = window.attributes
-            attributes.screenBrightness = 1f
-            window.attributes = attributes
-        }
-
+        mOriginalBrightness = window.updateBrightness(config.maxBrightness, mOriginalBrightness)
         setupOrientation()
         refreshMenuItems()
 
@@ -146,6 +265,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
 
     override fun onDestroy() {
         super.onDestroy()
+        ColorModeHelper.resetColorMode(this)
+
         if (intent.extras?.containsKey(IS_VIEW_INTENT) == true) {
             config.temporarilyShowHidden = false
         }
@@ -176,6 +297,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                 findItem(R.id.menu_rename).isVisible = visibleBottomActions and BOTTOM_ACTION_RENAME == 0 && !currentMedium.getIsInRecycleBin()
                 findItem(R.id.menu_rotate).isVisible = currentMedium.isImage() && visibleBottomActions and BOTTOM_ACTION_ROTATE == 0
                 findItem(R.id.menu_set_as).isVisible = visibleBottomActions and BOTTOM_ACTION_SET_AS == 0
+                findItem(R.id.menu_copy_to_clipboard).isVisible = currentMedium.isImage()
                 findItem(R.id.menu_copy_to).isVisible = visibleBottomActions and BOTTOM_ACTION_COPY == 0
                 findItem(R.id.menu_move_to).isVisible = visibleBottomActions and BOTTOM_ACTION_MOVE == 0
                 findItem(R.id.menu_save_as).isVisible = rotationDegrees != 0
@@ -194,9 +316,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                     currentMedium.isFavorite && visibleBottomActions and BOTTOM_ACTION_TOGGLE_FAVORITE == 0 && !currentMedium.getIsInRecycleBin()
 
                 findItem(R.id.menu_restore_file).isVisible = currentMedium.path.startsWith(recycleBinPath)
-                findItem(R.id.menu_create_shortcut).isVisible = isOreoPlus()
+                findItem(R.id.menu_create_shortcut).isVisible = true
                 findItem(R.id.menu_change_orientation).isVisible = rotationDegrees == 0 && visibleBottomActions and BOTTOM_ACTION_CHANGE_ORIENTATION == 0
-                findItem(R.id.menu_change_orientation).icon = resources.getDrawable(getChangeOrientationIcon())
                 findItem(R.id.menu_rotate).setShowAsAction(
                     if (rotationDegrees != 0) {
                         MenuItem.SHOW_AS_ACTION_ALWAYS
@@ -213,7 +334,6 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     private fun setupOptionsMenu() {
-        (binding.mediumViewerAppbar.layoutParams as RelativeLayout.LayoutParams).topMargin = statusBarHeight
         binding.mediumViewerToolbar.apply {
             setTitleTextColor(Color.WHITE)
             overflowIcon = resources.getColoredDrawableWithColor(org.fossify.commons.R.drawable.ic_three_dots_vector, Color.WHITE)
@@ -247,13 +367,15 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                 R.id.menu_add_to_favorites -> toggleFavorite()
                 R.id.menu_remove_from_favorites -> toggleFavorite()
                 R.id.menu_restore_file -> restoreFile()
-                R.id.menu_force_portrait -> toggleOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-                R.id.menu_force_landscape -> toggleOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-                R.id.menu_default_orientation -> toggleOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+                R.id.menu_force_portrait -> toggleOrientation(SCREEN_ORIENTATION_PORTRAIT)
+                R.id.menu_force_landscape -> toggleOrientation(SCREEN_ORIENTATION_LANDSCAPE)
+                R.id.menu_force_landscape_reverse -> toggleOrientation(SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+                R.id.menu_default_orientation -> toggleOrientation(SCREEN_ORIENTATION_UNSPECIFIED)
                 R.id.menu_save_as -> saveImageAs()
                 R.id.menu_create_shortcut -> createShortcut()
                 R.id.menu_resize -> resizeImage()
                 R.id.menu_settings -> launchSettings()
+                R.id.menu_copy_to_clipboard -> copyImageToClipboard()
                 else -> return@setOnMenuItemClickListener false
             }
             return@setOnMenuItemClickListener true
@@ -284,7 +406,6 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         initBottomActionsLayout()
-        (binding.mediumViewerAppbar.layoutParams as RelativeLayout.LayoutParams).topMargin = statusBarHeight
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -335,7 +456,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             return
         }
 
-        showSystemUI(true)
+        showSystemUI()
 
         if (intent.getBooleanExtra(SKIP_AUTHENTICATION, false)) {
             initContinue()
@@ -393,7 +514,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
         binding.viewPager.offscreenPageLimit = 2
 
         if (config.blackBackground) {
-            binding.viewPager.background = ColorDrawable(Color.BLACK)
+            binding.fragmentHolder.background = Color.BLACK.toDrawable()
+            binding.viewPager.background = Color.BLACK.toDrawable()
         }
 
         if (config.hideSystemUI) {
@@ -404,22 +526,10 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             }
         }
 
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            mIsFullScreen = if (isUpsideDownCakePlus()) {
-                visibility and View.SYSTEM_UI_FLAG_LOW_PROFILE != 0
-            } else if (isNougatPlus() && isInMultiWindowMode) {
-                visibility and View.SYSTEM_UI_FLAG_LOW_PROFILE != 0
-            } else if (visibility and View.SYSTEM_UI_FLAG_LOW_PROFILE == 0) {
-                false
-            } else {
-                visibility and View.SYSTEM_UI_FLAG_FULLSCREEN != 0
-            }
-
-            checkSystemUI()
-            fullscreenToggled()
-        }
-
-        if (intent.action == "com.android.camera.action.REVIEW") {
+        if (
+            intent.action == "com.android.camera.action.REVIEW"
+            || intent.action == MediaStore.ACTION_REVIEW
+        ) {
             ensureBackgroundThread {
                 if (mediaDB.getMediaFromPath(mPath).isEmpty()) {
                     val filename = mPath.getFilenameFromPath()
@@ -460,9 +570,9 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     private fun setupOrientation() {
         if (!mIsOrientationLocked) {
             if (config.screenRotation == ROTATE_BY_DEVICE_ROTATION) {
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                requestedOrientation = SCREEN_ORIENTATION_SENSOR
             } else if (config.screenRotation == ROTATE_BY_SYSTEM_SETTING) {
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                requestedOrientation = SCREEN_ORIENTATION_UNSPECIFIED
             }
         }
     }
@@ -502,7 +612,11 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                         binding.viewPager.setPageTransformer(false, FadePageTransformer())
                     }
 
-                    hideSystemUI(true)
+                    hideSystemUI()
+                    if (!mIsFullScreen) {
+                        mIsFullScreen = true
+                        fullscreenToggled()
+                    }
                     mRandomSlideshowStopped = false
                     mSlideshowInterval = config.slideshowInterval
                     mSlideshowMoveBackwards = config.slideshowMoveBackwards
@@ -595,7 +709,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
         if (mIsSlideshowActive) {
             binding.viewPager.setPageTransformer(false, DefaultPageTransformer())
             mIsSlideshowActive = false
-            showSystemUI(true)
+            showSystemUI()
             mSlideshowHandler.removeCallbacksAndMessages(null)
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             mAreSlideShowMediaVisible = false
@@ -722,13 +836,13 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
 
     private fun toggleOrientation(orientation: Int) {
         requestedOrientation = orientation
-        mIsOrientationLocked = orientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        mIsOrientationLocked = orientation != SCREEN_ORIENTATION_UNSPECIFIED
         refreshMenuItems()
     }
 
     private fun getChangeOrientationIcon(): Int {
         return if (mIsOrientationLocked) {
-            if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+            if (requestedOrientation == SCREEN_ORIENTATION_PORTRAIT) {
                 org.fossify.commons.R.drawable.ic_orientation_portrait_vector
             } else {
                 org.fossify.commons.R.drawable.ic_orientation_landscape_vector
@@ -761,10 +875,6 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     private fun createShortcut() {
-        if (!isOreoPlus()) {
-            return
-        }
-
         val manager = getSystemService(ShortcutManager::class.java)
         if (manager.isRequestPinShortcutSupported) {
             val medium = getCurrentMedium() ?: return
@@ -825,17 +935,10 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     private fun initBottomActionsLayout() {
-        binding.bottomActions.root.layoutParams.height = resources.getDimension(R.dimen.bottom_actions_height).toInt() + navigationBarHeight
         if (config.bottomActions) {
             binding.bottomActions.root.beVisible()
         } else {
             binding.bottomActions.root.beGone()
-        }
-
-        if (!portrait && navigationBarOnSide && navigationBarWidth > 0) {
-            binding.mediumViewerToolbar.setPadding(0, 0, navigationBarWidth, 0)
-        } else {
-            binding.mediumViewerToolbar.setPadding(0, 0, 0, 0)
         }
     }
 
@@ -883,11 +986,12 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
         binding.bottomActions.bottomChangeOrientation.setOnLongClickListener { toast(R.string.change_orientation); true }
         binding.bottomActions.bottomChangeOrientation.setOnClickListener {
             requestedOrientation = when (requestedOrientation) {
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                else -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                SCREEN_ORIENTATION_PORTRAIT -> SCREEN_ORIENTATION_LANDSCAPE
+                SCREEN_ORIENTATION_LANDSCAPE -> SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                SCREEN_ORIENTATION_REVERSE_LANDSCAPE -> SCREEN_ORIENTATION_UNSPECIFIED
+                else -> SCREEN_ORIENTATION_PORTRAIT
             }
-            mIsOrientationLocked = requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            mIsOrientationLocked = requestedOrientation != SCREEN_ORIENTATION_UNSPECIFIED
             updateBottomActionIcons(currentMedium)
         }
 
@@ -988,7 +1092,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     private fun sendPrintIntent(path: String) {
         val printHelper = PrintHelper(this)
         printHelper.scaleMode = PrintHelper.SCALE_MODE_FIT
-        printHelper.orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        printHelper.orientation = SCREEN_ORIENTATION_PORTRAIT
 
         try {
             val resolution = path.getImageResolution(this)
@@ -1046,6 +1150,14 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     private fun resizeImage() {
         val oldPath = getCurrentPath()
         launchResizeImageDialog(oldPath)
+    }
+
+    private fun copyImageToClipboard() {
+        val clipboard = getSystemService(ClipboardManager::class.java) as ClipboardManager
+
+        val imagePath = getCurrentMedium()?.path ?: return
+        val clip = ClipData.newUri(contentResolver, "Image", getFinalUriFromPath(imagePath, BuildConfig.APPLICATION_ID))
+        clipboard.setPrimaryClip(clip)
     }
 
     private fun checkDeleteConfirmation() {
@@ -1298,9 +1410,9 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             val width = if (flipSides) resolution.y else resolution.x
             val height = if (flipSides) resolution.x else resolution.y
             if (width > height) {
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             } else if (width < height) {
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
             }
         }
     }
@@ -1319,6 +1431,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     override fun isSlideShowActive() = mIsSlideshowActive
+
+    override fun isFullScreen() = mIsFullScreen
 
     override fun goToPrevItem() {
         binding.viewPager.setCurrentItem(binding.viewPager.currentItem - 1, false)
@@ -1359,10 +1473,10 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
 
     private fun checkSystemUI() {
         if (mIsFullScreen) {
-            hideSystemUI(true)
+            hideSystemUI()
         } else {
             stopSlideshow()
-            showSystemUI(true)
+            showSystemUI()
         }
     }
 

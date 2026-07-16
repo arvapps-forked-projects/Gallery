@@ -2,7 +2,7 @@
 <resources>
     <string name="app_launcher_name">Galerij</string>
     <string name="edit">Bewerken</string>
-    <string name="open_camera">Camera</string>
+    <string name="open_camera">Camera openen</string>
     <string name="hidden">(verborgen)</string>
     <string name="excluded">(uitgesloten)</string>
     <string name="pin_folder">Map vastzetten</string>
@@ -10,10 +10,10 @@
     <string name="pin_to_the_top">Bovenaan vastzetten</string>
     <string name="show_all">Inhoud van alle mappen tonen</string>
     <string name="all_folders">Alle mappen</string>
-    <string name="folder_view">Mapweergave</string>
+    <string name="folder_view">Overschakelen naar mapweergave</string>
     <string name="other_folder">Andere map</string>
     <string name="show_on_map">Op kaart tonen</string>
-    <string name="unknown_location">Locatie onbekend</string>
+    <string name="unknown_location">Onbekende locatie</string>
     <string name="brightness">Helderheid</string>
     <string name="lock_orientation">Schermoriëntatie vergrendelen</string>
     <string name="unlock_orientation">Schermoriëntatie ontgrendelen</string>
@@ -22,22 +22,22 @@
     <string name="force_landscape">Landschapsmodus forceren</string>
     <string name="use_default_orientation">Standaardmodus gebruiken</string>
     <string name="fix_date_taken">Opnamedatum corrigeren</string>
-    <string name="fixing">Corrigeren…</string>
-    <string name="dates_fixed_successfully">Datums zijn gecorrigeerd</string>
+    <string name="fixing">Aanpassen…</string>
+    <string name="dates_fixed_successfully">Datums succesvol aangepast</string>
     <string name="no_date_takens_found">Geen opnamedatums gevonden</string>
     <string name="share_resized">Verkleinde versie delen</string>
     <string name="switch_to_file_search">Naar bestanden in alle zichtbare mappen zoeken</string>
     <string name="set_as_default_folder">Als standaardmap instellen</string>
-    <string name="unset_as_default_folder">Standaardmap herstellen</string>
-    <string name="reorder_by_dragging">Volgorde mappen bepalen met sleepgebaren</string>
-    <string name="reorder_by_dragging_pro">Volgorde mappen bepalen met sleepgebaren (Pro)</string>
+    <string name="unset_as_default_folder">Niet als standaardmap gebruiken</string>
+    <string name="reorder_by_dragging">Mappen sorteren met sleepgebaren</string>
+    <string name="reorder_by_dragging_pro">Mappen sorteren met sleepgebaren (Pro)</string>
     <string name="restore_to_path">Herstellen naar \'%s\'</string>
     <string name="filter_media">Media filteren</string>
     <string name="images">Afbeeldingen</string>
     <string name="videos">Video\'s</string>
-    <string name="gifs">GIF-bestanden</string>
+    <string name="gifs">GIFs</string>
     <string name="raw_images">RAW-afbeeldingen</string>
-    <string name="svgs">SVG-vectorafbeeldingen</string>
+    <string name="svgs">SVGs</string>
     <string name="portraits">Portretten</string>
     <string name="no_media_with_filters">Er zijn geen bestanden gevonden met de huidige filters.</string>
     <string name="change_filters_underlined"><u>Filters aanpassen</u></string>
@@ -170,7 +170,7 @@
     <string name="show_recycle_bin_last">Prullenbak als laatste item tonen</string>
     <string name="allow_down_gesture">Naar beneden vegen om volledig scherm af te sluiten</string>
     <string name="allow_one_to_one_zoom">1:1 zoomen na 2x dubbelklikken</string>
-    <string name="open_videos_on_separate_screen">Video\'s altijd in apart scherm met horizontale veeggebaren openen</string>
+    <string name="open_videos_on_separate_screen">Video\'s in apart scherm met horizontale veeggebaren openen</string>
     <string name="show_notch">Inkeping scherm tonen indien aanwezig</string>
     <string name="allow_rotating_gestures">Afbeeldingen met veeggebaren draaien</string>
     <string name="file_loading_priority">Prioriteit bij inladen bestanden</string>
@@ -251,4 +251,22 @@
 \nGebruik de functie Verbergen om ze ook in andere apps te verbergen.</string>
     <string name="faq_5_text">Met \"Uitsluiten\" wordt het tonen van de map alleen binnen Fossify Galerij voorkomen, terwijl \"Verbergen\" de map ook zal verbergen voor andere galerij-apps. Met \"Verbergen\" wordt een bestand genaamd \".nomedia\" in de te verbergen map aangemaakt (het verwijderen van dit bestand uit de map maakt het verbergen ongedaan). Op sommige apparaten is het echter niet mogelijk om specifieke mappen, zoals Camera, Screenshots en Downloads, te verbergen.</string>
     <string name="faq_1_text">Zoek eerst de huidige standaard-app voor foto’s en video’s in de Android-instellingen (via \"Apps\" of Apps en meldingen\"). Klik bij de App-info op \"Standaardwaarden wissen\" (soms onder \"Standaard openen\"). Bij het openen van een foto of video zal de volgende keer een keuzescherm verschijnen, waarin Fossify Galerij als standaard-app kan worden ingesteld.</string>
+    <string name="full_storage_permission_required">Fossify Galerij heeft volledige toegang nodig al je foto\'s en video\'s te kunnen tonen. Ga naar de app-instellingen &gt; Rechten &gt; Foto\'s en video\'s &gt; Alles toestaan.</string>
+    <string name="playback_speed">Afspeelsnelheid</string>
+    <string name="failed_to_load_media">Fout bij het laden van het bestand.</string>
+    <string name="file_is_malformed_or_corrupted">Bestand is onvolledig of beschadigd.</string>
+    <string name="unsupported_format">Niet-ondersteund formaat.</string>
+    <string name="media_exceeds_device_capabilities">Dit apparaat kan deze video niet afspelen.</string>
+    <string name="keep_screen_on_fullscreen_photos">Scherm ingeschakeld houden bij weergave in volledig scherm</string>
+    <plurals name="restore_confirmation">
+        <item quantity="one">%d bestand herstellen?</item>
+        <item quantity="other">%d bestanden herstellen?</item>
+    </plurals>
+    <string name="force_landscape_reverse">Landschapsmodus forceren (omgedraaid)</string>
+    <string name="overwrite_original">Origineel overschrĳven</string>
+    <string name="video_no_sound">Deze video heeft geen geluid</string>
+    <string name="render_ultra_hdr_photos">Ultra HDR-foto\'s in HDR tonen</string>
+    <string name="on_video_tap">Bij klik op video</string>
+    <string name="open_in_app_player">Openen in interne speler</string>
+    <string name="open_system_default_player">Openen met standaard-app</string>
 </resources>

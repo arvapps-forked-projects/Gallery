@@ -3,84 +3,125 @@ package org.fossify.gallery.activities
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.Html
 import android.view.View
-import android.widget.RelativeLayout
+import androidx.core.graphics.drawable.toDrawable
+import com.google.android.material.appbar.AppBarLayout
 import org.fossify.commons.dialogs.PropertiesDialog
-import org.fossify.commons.extensions.*
-import org.fossify.commons.helpers.*
+import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
+import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.extensions.checkAppSideloading
+import org.fossify.commons.extensions.getColoredDrawableWithColor
+import org.fossify.commons.extensions.getDoesFilePathExist
+import org.fossify.commons.extensions.getFilenameFromPath
+import org.fossify.commons.extensions.getFilenameFromUri
+import org.fossify.commons.extensions.getFinalUriFromPath
+import org.fossify.commons.extensions.getParentPath
+import org.fossify.commons.extensions.getRealPathFromURI
+import org.fossify.commons.extensions.getUriMimeType
+import org.fossify.commons.extensions.hideKeyboard
+import org.fossify.commons.extensions.isExternalStorageManager
+import org.fossify.commons.extensions.isGif
+import org.fossify.commons.extensions.isGone
+import org.fossify.commons.extensions.isImageFast
+import org.fossify.commons.extensions.isPortrait
+import org.fossify.commons.extensions.isRawFast
+import org.fossify.commons.extensions.isSvg
+import org.fossify.commons.extensions.isVideoFast
+import org.fossify.commons.extensions.rescanPath
+import org.fossify.commons.extensions.rescanPaths
+import org.fossify.commons.extensions.toHex
+import org.fossify.commons.extensions.toast
+import org.fossify.commons.extensions.updateBrightness
+import org.fossify.commons.extensions.viewBinding
+import org.fossify.commons.helpers.IS_FROM_GALLERY
+import org.fossify.commons.helpers.NOMEDIA
+import org.fossify.commons.helpers.REAL_FILE_PATH
+import org.fossify.commons.helpers.ensureBackgroundThread
+import org.fossify.commons.helpers.isRPlus
 import org.fossify.gallery.BuildConfig
 import org.fossify.gallery.R
 import org.fossify.gallery.databinding.FragmentHolderBinding
-import org.fossify.gallery.extensions.*
+import org.fossify.gallery.extensions.config
+import org.fossify.gallery.extensions.hideSystemUI
+import org.fossify.gallery.extensions.openEditor
+import org.fossify.gallery.extensions.openPath
+import org.fossify.gallery.extensions.setAs
+import org.fossify.gallery.extensions.sharePath
+import org.fossify.gallery.extensions.showFileOnMap
+import org.fossify.gallery.extensions.showSystemUI
 import org.fossify.gallery.fragments.PhotoFragment
 import org.fossify.gallery.fragments.VideoFragment
 import org.fossify.gallery.fragments.ViewPagerFragment
-import org.fossify.gallery.helpers.*
+import org.fossify.gallery.helpers.BOTTOM_ACTION_EDIT
+import org.fossify.gallery.helpers.BOTTOM_ACTION_PROPERTIES
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SET_AS
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SHARE
+import org.fossify.gallery.helpers.BOTTOM_ACTION_SHOW_ON_MAP
+import org.fossify.gallery.helpers.IS_IN_RECYCLE_BIN
+import org.fossify.gallery.helpers.IS_VIEW_INTENT
+import org.fossify.gallery.helpers.MEDIUM
+import org.fossify.gallery.helpers.PATH
+import org.fossify.gallery.helpers.SHOW_FAVORITES
+import org.fossify.gallery.helpers.SKIP_AUTHENTICATION
+import org.fossify.gallery.helpers.TYPE_GIFS
+import org.fossify.gallery.helpers.TYPE_IMAGES
+import org.fossify.gallery.helpers.TYPE_PORTRAITS
+import org.fossify.gallery.helpers.TYPE_RAWS
+import org.fossify.gallery.helpers.TYPE_SVGS
+import org.fossify.gallery.helpers.TYPE_VIDEOS
 import org.fossify.gallery.models.Medium
 import java.io.File
 
-open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentListener {
+open class PhotoVideoActivity : BaseViewerActivity(), ViewPagerFragment.FragmentListener {
     private var mMedium: Medium? = null
     private var mIsFullScreen = false
     private var mIsFromGallery = false
     private var mFragment: ViewPagerFragment? = null
     private var mUri: Uri? = null
+    private var mOriginalBrightness: Float? = null
 
     var mIsVideo = false
 
     private val binding by viewBinding(FragmentHolderBinding::inflate)
 
-    public override fun onCreate(savedInstanceState: Bundle?) {
-        showTransparentTop = true
+    override val contentHolder: View
+        get() = binding.fragmentHolder
 
+    override val appBarLayout: AppBarLayout
+        get() = binding.fragmentViewerAppbar
+
+    public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+        setupEdgeToEdge(
+            padBottomSystem = listOf(binding.bottomActions.bottomActionsWrapper),
+        )
         if (checkAppSideloading()) {
             return
         }
 
         setupOptionsMenu()
         refreshMenuItems()
-        handlePermission(getPermissionToRequest()) {
-            if (it) {
-                checkIntent(savedInstanceState)
-            } else {
-                toast(org.fossify.commons.R.string.no_storage_permissions)
-                finish()
-            }
+        requestMediaPermissions {
+            checkIntent(savedInstanceState)
         }
     }
 
     override fun onResume() {
         super.onResume()
-
-        if (config.bottomActions) {
-            window.navigationBarColor = Color.TRANSPARENT
-        } else {
-            setTranslucentNavigation()
-        }
-
         if (config.blackBackground) {
-            updateStatusbarColor(Color.BLACK)
+            binding.fragmentHolder.background = Color.BLACK.toDrawable()
         }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         initBottomActionsLayout()
-
-        binding.topShadow.layoutParams.height = statusBarHeight + actionBarHeight
-        (binding.fragmentViewerAppbar.layoutParams as RelativeLayout.LayoutParams).topMargin = statusBarHeight
-        if (!portrait && navigationBarOnSide && navigationBarWidth > 0) {
-            binding.fragmentViewerToolbar.setPadding(0, 0, navigationBarWidth, 0)
-        } else {
-            binding.fragmentViewerToolbar.setPadding(0, 0, 0, 0)
-        }
     }
 
     fun refreshMenuItems() {
@@ -96,7 +137,6 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
     }
 
     private fun setupOptionsMenu() {
-        (binding.fragmentViewerAppbar.layoutParams as RelativeLayout.LayoutParams).topMargin = statusBarHeight
         binding.fragmentViewerToolbar.apply {
             setTitleTextColor(Color.WHITE)
             overflowIcon = resources.getColoredDrawableWithColor(org.fossify.commons.R.drawable.ic_three_dots_vector, Color.WHITE)
@@ -149,8 +189,8 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
 
         var filename = getFilenameFromUri(mUri!!)
         mIsFromGallery = intent.getBooleanExtra(IS_FROM_GALLERY, false)
-        if (mIsFromGallery && filename.isVideoFast() && config.openVideosOnSeparateScreen) {
-            launchVideoPlayer()
+        if (mIsFromGallery && filename.isVideoFast() && config.gestureVideoPlayer) {
+            launchGesturePlayer()
             return
         }
 
@@ -199,15 +239,7 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
             }
         }
 
-        binding.topShadow.layoutParams.height = statusBarHeight + actionBarHeight
-        if (!portrait && navigationBarOnSide && navigationBarWidth > 0) {
-            binding.fragmentViewerToolbar.setPadding(0, 0, navigationBarWidth, 0)
-        } else {
-            binding.fragmentViewerToolbar.setPadding(0, 0, 0, 0)
-        }
-
-        checkNotchSupport()
-        showSystemUI(true)
+        showSystemUI()
         val bundle = Bundle()
         val file = File(mUri.toString())
         val intentType = intent.type ?: ""
@@ -233,24 +265,14 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
         }
 
         if (config.blackBackground) {
-            binding.fragmentHolder.background = ColorDrawable(Color.BLACK)
+            binding.fragmentHolder.background = Color.BLACK.toDrawable()
         }
 
-        if (config.maxBrightness) {
-            val attributes = window.attributes
-            attributes.screenBrightness = 1f
-            window.attributes = attributes
-        }
-
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            val isFullscreen = visibility and View.SYSTEM_UI_FLAG_FULLSCREEN != 0
-            mFragment?.fullscreenToggled(isFullscreen)
-        }
-
+        mOriginalBrightness = window.updateBrightness(config.maxBrightness, mOriginalBrightness)
         initBottomActions()
     }
 
-    private fun launchVideoPlayer() {
+    private fun launchGesturePlayer() {
         val newUri = getFinalUriFromPath(mUri.toString(), BuildConfig.APPLICATION_ID)
         if (newUri == null) {
             toast(org.fossify.commons.R.string.unknown_error_occurred)
@@ -337,7 +359,6 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
     }
 
     private fun initBottomActionsLayout() {
-        binding.bottomActions.root.layoutParams.height = resources.getDimension(R.dimen.bottom_actions_height).toInt() + navigationBarHeight
         if (config.bottomActions) {
             binding.bottomActions.root.beVisible()
         } else {
@@ -391,11 +412,8 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
 
     override fun fragmentClicked() {
         mIsFullScreen = !mIsFullScreen
-        if (mIsFullScreen) {
-            hideSystemUI(true)
-        } else {
-            showSystemUI(true)
-        }
+        if (mIsFullScreen) hideSystemUI() else showSystemUI()
+        mFragment?.fullscreenToggled(mIsFullScreen)
 
         val newAlpha = if (mIsFullScreen) 0f else 1f
         binding.topShadow.animate().alpha(newAlpha).start()
@@ -419,4 +437,6 @@ open class PhotoVideoActivity : SimpleActivity(), ViewPagerFragment.FragmentList
     override fun launchViewVideoIntent(path: String) {}
 
     override fun isSlideShowActive() = false
+
+    override fun isFullScreen() = mIsFullScreen
 }

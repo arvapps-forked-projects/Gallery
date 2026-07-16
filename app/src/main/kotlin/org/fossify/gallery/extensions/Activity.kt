@@ -1,25 +1,23 @@
 package org.fossify.gallery.extensions
 
-import android.annotation.TargetApi
 import android.app.Activity
 import android.content.ContentProviderOperation
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.Point
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.MediaStore.Files
 import android.provider.MediaStore.Images
 import android.provider.Settings
 import android.util.DisplayMetrics
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.exifinterface.media.ExifInterface
 import com.bumptech.glide.Glide
@@ -31,6 +29,8 @@ import org.fossify.commons.activities.BaseSimpleActivity
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.SecurityDialog
 import org.fossify.commons.extensions.*
+import org.fossify.commons.extensions.getCurrentFormattedDateTime
+import org.fossify.commons.extensions.internalStoragePath
 import org.fossify.commons.helpers.*
 import org.fossify.commons.models.FAQItem
 import org.fossify.commons.models.FileDirItem
@@ -39,16 +39,19 @@ import org.fossify.gallery.R
 import org.fossify.gallery.activities.MediaActivity
 import org.fossify.gallery.activities.SettingsActivity
 import org.fossify.gallery.activities.SimpleActivity
+import org.fossify.gallery.activities.VideoPlayerActivity
 import org.fossify.gallery.dialogs.AllFilesPermissionDialog
 import org.fossify.gallery.dialogs.PickDirectoryDialog
 import org.fossify.gallery.dialogs.ResizeMultipleImagesDialog
 import org.fossify.gallery.dialogs.ResizeWithPathDialog
 import org.fossify.gallery.helpers.DIRECTORY
 import org.fossify.gallery.helpers.RECYCLE_BIN
+import org.fossify.gallery.helpers.TEMP_FOLDER_NAME
 import org.fossify.gallery.models.DateTaken
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.core.net.toUri
 
 fun Activity.sharePath(path: String) {
     sharePathIntent(path, BuildConfig.APPLICATION_ID)
@@ -72,6 +75,25 @@ fun Activity.setAs(path: String) {
 
 fun Activity.openPath(path: String, forceChooser: Boolean, extras: HashMap<String, Boolean> = HashMap()) {
     openPathIntent(path, forceChooser, BuildConfig.APPLICATION_ID, extras = extras)
+}
+
+fun Activity.launchGesturePlayer(path: String, extras: HashMap<String, Boolean> = HashMap()) {
+    ensureBackgroundThread {
+        val newUri = getFinalUriFromPath(path, BuildConfig.APPLICATION_ID)
+        if (newUri == null) {
+            toast(org.fossify.commons.R.string.unknown_error_occurred)
+            return@ensureBackgroundThread
+        }
+
+        val mimeType = getUriMimeType(path, newUri)
+        runOnUiThread {
+            Intent(applicationContext, VideoPlayerActivity::class.java).apply {
+                setDataAndType(newUri, mimeType)
+                for ((key, value) in extras) putExtra(key, value)
+                startActivity(this)
+            }
+        }
+    }
 }
 
 fun Activity.openEditor(path: String, forceChooser: Boolean = false) {
@@ -166,7 +188,7 @@ fun BaseSimpleActivity.launchGrantAllFilesIntent() {
     try {
         val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
         intent.addCategory("android.intent.category.DEFAULT")
-        intent.data = Uri.parse("package:$packageName")
+        intent.data = "package:$packageName".toUri()
         startActivity(intent)
     } catch (e: Exception) {
         val intent = Intent()
@@ -179,20 +201,12 @@ fun BaseSimpleActivity.launchGrantAllFilesIntent() {
     }
 }
 
-fun AppCompatActivity.showSystemUI(toggleActionBarVisibility: Boolean) {
-    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+fun AppCompatActivity.showSystemUI() {
+    window.showBars()
 }
 
-fun AppCompatActivity.hideSystemUI(toggleActionBarVisibility: Boolean) {
-    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-        View.SYSTEM_UI_FLAG_LOW_PROFILE or
-        View.SYSTEM_UI_FLAG_FULLSCREEN or
-        View.SYSTEM_UI_FLAG_IMMERSIVE
+fun AppCompatActivity.hideSystemUI() {
+    window.hideBars(transient = false)
 }
 
 fun BaseSimpleActivity.addNoMedia(path: String, callback: () -> Unit) {
@@ -506,6 +520,17 @@ fun BaseSimpleActivity.showRecycleBinEmptyingDialog(callback: () -> Unit) {
     }
 }
 
+fun BaseSimpleActivity.showRestoreConfirmationDialog(count: Int, callback: () -> Unit) {
+    ConfirmationDialog(
+        activity = this,
+        message = resources.getQuantityString(R.plurals.restore_confirmation, count, count),
+        positive = org.fossify.commons.R.string.yes,
+        negative = org.fossify.commons.R.string.no
+    ) {
+        callback()
+    }
+}
+
 fun BaseSimpleActivity.updateFavoritePaths(fileDirItems: ArrayList<FileDirItem>, destination: String) {
     ensureBackgroundThread {
         fileDirItems.forEach {
@@ -689,7 +714,6 @@ fun BaseSimpleActivity.saveRotatedImageToFile(oldPath: String, newPath: String, 
     }
 }
 
-@TargetApi(Build.VERSION_CODES.N)
 fun Activity.tryRotateByExif(path: String, degrees: Int, showToasts: Boolean, callback: () -> Unit): Boolean {
     return try {
         val file = File(path)
@@ -829,11 +853,9 @@ fun BaseSimpleActivity.launchResizeImageDialog(path: String, callback: (() -> Un
 }
 
 fun BaseSimpleActivity.resizeImage(oldPath: String, newPath: String, size: Point, callback: (success: Boolean) -> Unit) {
-    var oldExif: ExifInterface? = null
-    if (isNougatPlus()) {
-        val inputStream = contentResolver.openInputStream(Uri.fromFile(File(oldPath)))
-        oldExif = ExifInterface(inputStream!!)
-    }
+    var oldExif: ExifInterface?
+    val inputStream = contentResolver.openInputStream(Uri.fromFile(File(oldPath)))
+    oldExif = ExifInterface(inputStream!!)
 
     val newBitmap = Glide.with(applicationContext).asBitmap().load(oldPath).submit(size.x, size.y).get()
 
@@ -845,10 +867,8 @@ fun BaseSimpleActivity.resizeImage(oldPath: String, newPath: String, size: Point
                 try {
                     newBitmap.compress(newFile.absolutePath.getCompressionFormat(), 90, out)
 
-                    if (isNougatPlus()) {
-                        val newExif = ExifInterface(newFile.absolutePath)
-                        oldExif?.copyNonDimensionAttributesTo(newExif)
-                    }
+                    val newExif = ExifInterface(newFile.absolutePath)
+                    oldExif.copyNonDimensionAttributesTo(newExif)
                 } catch (ignored: Exception) {
                 }
 
@@ -907,11 +927,10 @@ fun Activity.getShortcutImage(tmb: String, drawable: Drawable, callback: () -> U
     }
 }
 
-@TargetApi(Build.VERSION_CODES.N)
 fun Activity.showFileOnMap(path: String) {
     val exif = try {
-        if (path.startsWith("content://") && isNougatPlus()) {
-            ExifInterface(contentResolver.openInputStream(Uri.parse(path))!!)
+        if (path.startsWith("content://")) {
+            ExifInterface(contentResolver.openInputStream(path.toUri())!!)
         } else {
             ExifInterface(path)
         }
@@ -945,4 +964,111 @@ fun Activity.openRecycleBin() {
         putExtra(DIRECTORY, RECYCLE_BIN)
         startActivity(this)
     }
+}
+
+fun BaseSimpleActivity.writeBitmapToCache(
+    source: Uri,
+    bitmap: Bitmap,
+    callback: (path: String?) -> Unit
+) {
+    val bytes = ByteArrayOutputStream()
+    bitmap.compress(CompressFormat.PNG, 0, bytes)
+
+    val folder = File(cacheDir, TEMP_FOLDER_NAME)
+    if (!folder.exists()) {
+        if (!folder.mkdir()) {
+            callback(null)
+            return
+        }
+    }
+
+    val filename = applicationContext.getFilenameFromContentUri(source)
+        ?: "tmp-${System.currentTimeMillis()}.jpg"
+    val newPath = "$folder/$filename"
+    val fileDirItem = FileDirItem(newPath, filename)
+    getFileOutputStream(fileDirItem, true) {
+        if (it != null) {
+            try {
+                it.write(bytes.toByteArray())
+                callback(newPath)
+            } catch (_: Exception) {
+                callback(null)
+            } finally {
+                it.close()
+            }
+        } else {
+            callback(null)
+        }
+    }
+}
+
+fun BaseSimpleActivity.ensureWritablePath(
+    targetPath: String,
+    confirmOverwrite: Boolean = true,
+    onCancel: (() -> Unit)? = null,
+    callback: (String) -> Unit,
+) {
+    fun proceedAfterGrants() {
+        handleSAFDialogSdk30(targetPath) { granted ->
+            if (!granted) {
+                onCancel?.invoke()
+                return@handleSAFDialogSdk30
+            }
+            callback(targetPath)
+        }
+    }
+
+    fun requestGrantsThenProceed() {
+        if (isRPlus() && !isExternalStorageManager()) {
+            val fileDirItem = arrayListOf(File(targetPath).toFileDirItem(this))
+            val fileUris = getFileUrisFromFileDirItems(fileDirItem)
+            updateSDK30Uris(fileUris) { success ->
+                if (success) proceedAfterGrants() else onCancel?.invoke()
+            }
+        } else {
+            proceedAfterGrants()
+        }
+    }
+
+    if (confirmOverwrite && getDoesFilePathExist(targetPath)) {
+        val title = String.format(
+            getString(org.fossify.commons.R.string.file_already_exists_overwrite),
+            targetPath.getFilenameFromPath()
+        )
+        ConfirmationDialog(this, title) {
+            requestGrantsThenProceed()
+        }
+    } else {
+        requestGrantsThenProceed()
+    }
+}
+
+fun Activity.proposeNewFilePath(uri: Uri): Pair<String, Boolean> {
+    var newPath = applicationContext.getRealPathFromURI(uri) ?: ""
+    if (newPath.startsWith("/mnt/")) {
+        newPath = ""
+    }
+
+    var shouldAppendFilename = true
+    if (newPath.isEmpty()) {
+        val filename = applicationContext.getFilenameFromContentUri(uri) ?: ""
+        if (filename.isNotEmpty()) {
+            val path = if (intent.extras?.containsKey(REAL_FILE_PATH) == true) {
+                intent.getStringExtra(REAL_FILE_PATH)?.getParentPath()
+            } else {
+                internalStoragePath
+            }
+            newPath = "$path/$filename"
+            shouldAppendFilename = false
+        }
+    }
+
+    if (newPath.isEmpty()) {
+        newPath = "$internalStoragePath/${getCurrentFormattedDateTime()}.${
+            uri.toString().getFilenameExtension()
+        }"
+        shouldAppendFilename = false
+    }
+
+    return Pair(newPath, shouldAppendFilename)
 }

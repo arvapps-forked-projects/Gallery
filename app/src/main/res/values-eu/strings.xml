@@ -152,7 +152,7 @@
     <string name="screen_rotation_system_setting">Sistemaren ezarpena</string>
     <string name="screen_rotation_device_rotation">Gailu-biratzea</string>
     <string name="screen_rotation_aspect_ratio">Aspektu-erlazioa</string>
-    <string name="black_background_at_fullscreen">Hondo beltza pantaila osoko multimediarekin</string>
+    <string name="black_background_at_fullscreen">Atzeko plano beltza pantaila osoko moduan</string>
     <string name="scroll_thumbnails_horizontally">Korritu iruditxoak horizontalki</string>
     <string name="hide_system_ui_at_fullscreen">Automatikoki ezkutatu sistemaren EI pantaila osoko multimediarekin</string>
     <string name="delete_empty_folders">Ezabatu hutsik dauden karpetak beren edukia ezabatu ondoren</string>
@@ -217,7 +217,7 @@
     <string name="faq_3_text">Nahi duzun albuma luze sakatu eta Pin ikonoa hauta dezakezu ekintzen menuan, eta horrek goian finkatuko du. Karpeta anitz ere ainguratu ditzakezu, ainguratutako elementuak ordenatzeko metodo lehenetsiaren arabera ordenatuko dira.</string>
     <string name="faq_4_title">Nola aurreratu ditzaket bideoak azkar\?</string>
     <string name="faq_4_text">Pantailaren alboa bitan sakatuz edo bilaketa-barratik gertu dauden uneko edo gehienezko iraupeneko testuak sakatuz egin dezakezu. Aplikazioaren ezarpenetan bideoak pantaila bereizi batean irekitzea gaitzen baduzu, keinu horizontalak ere erabil ditzakezu.</string>
-    <string name="faq_5_title">Zein da karpeta bat ezkutatzearen eta baztertzearen arteko aldea\?</string>
+    <string name="faq_5_title">Zein da karpeta bat ezkutatzearen eta baztertzearen arteko diferentzia?</string>
     <string name="faq_6_title">Zergatik agertzen dira musikaren azala edo eranskailuak dituzten karpetak\?</string>
     <string name="faq_6_text">Gerta daiteke ezohiko album batzuk agertzea. Erraz bazter ditzakezu luze sakatuz eta Baztertu hautatuz. Hurrengo elkarrizketa-koadroan karpeta nagusia hauta dezakezu, litekeena da erlazionatutako beste albumak ere agertzea eragotziko duela.</string>
     <string name="faq_7_title">Irudiak dituen karpeta bat ez da agertzen edo ez ditu elementu guztiak erakusten. Zer egin dezaket\?</string>
@@ -251,4 +251,22 @@
     <string name="faq_1_title">Nola egin dezaket Fossify Gallery gailuaren galeria lehenetsia?</string>
     <string name="faq_1_text">Lehenik eta behin, lehenetsitako galeria aurkitu behar duzu zure gailuaren ezarpenetako Aplikazioak atalean, bilatu \"Ireki lehenespenez\" bezalako zerbait dioen botoi bat, egin klik gainean eta hautatu \"Garbitu lehenetsiak\". Irudi edo bideo bat irekitzen saiatuko zaren hurrengoan aplikazio-hautatzaile bat ikusi beharko zenuke, non Fossify Gallery hautatu eta aplikazio lehenetsia izan dezakezu.</string>
     <string name="faq_5_text">Baztertzeak karpeta Fossify Galerian soilik bistaratzea eragozten du, Ezkutatu sisteman funtzionatzen duen bitartean eta karpeta beste galerietatik ere ezkutatzen du. Emandako karpetan \".nomedia\" fitxategi huts bat sortuz funtzionatzen du, eta gero edozein fitxategi-kudeatzailerekin ere kendu dezakezu. Kontuan izan gailu batzuek ez dutela onartzen Kamera, Pantaila-argazkiak eta Deskargak bezalako karpetak ezkutatzen.</string>
+    <string name="full_storage_permission_required">Fossify Galeriak baimen guztiak behar ditu zure argazki eta bideo guztiak erakusteko. Joan Ezarpenak &gt; Baimenak &gt; Argazki eta bideaok &gt; Baimendu guztia aukerara.</string>
+    <string name="failed_to_load_media">Errorea gertatu da fitxategia kargatzean.</string>
+    <string name="playback_speed">Jotzeko abiadura</string>
+    <string name="file_is_malformed_or_corrupted">Fitxategia ez da zuzena edo kaltetuta dago.</string>
+    <string name="media_exceeds_device_capabilities">Mediek gailuaren ezaugarriak gainditzen dituzte.</string>
+    <string name="unsupported_format">Fitxategi ezin da erakutsi.</string>
+    <plurals name="restore_confirmation">
+        <item quantity="one">Ziur zaude fitxategi %d leheneratu nahi duzula?</item>
+        <item quantity="other">Ziur zaude %d fitxategiak leheneratu nahi dituzula?</item>
+    </plurals>
+    <string name="keep_screen_on_fullscreen_photos">Mantendu pantaila piztuta argazkiak pantaila osoan ikusi bitartean</string>
+    <string name="force_landscape_reverse">Behartu horizontala (alderantzizkoa)</string>
+    <string name="overwrite_original">Gainidatzi jatorrizkoa</string>
+    <string name="render_ultra_hdr_photos">Erakutsi Ultra HDR argazkiak HDR-n</string>
+    <string name="on_video_tap">Bideoa sakatzean</string>
+    <string name="open_in_app_player">Ireki aplikazioaren erreproduzigailuan</string>
+    <string name="open_system_default_player">Ireki lehenetsitako erreproduzigailuan</string>
+    <string name="video_no_sound">Bideo honek ez dauka audiorik</string>
 </resources>

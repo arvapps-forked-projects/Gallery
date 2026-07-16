@@ -1,27 +1,27 @@
-Libérez vos souvenirs, pas vos données personnelles. Fossify Gallery est l'application photo et vidéo ultime qui est aussi puissante que privée. Pas de pubs, pas d'autorisations inutiles – juste une expérience transparente et sur mesure pour vous.
+Libérez vos souvenirs, pas vos données personnelles. Fossify Gallery est l'application photo et vidéo ultime qui est aussi puissante que privée. Pas de pubs, pas d'autorisations inutiles – juste une expérience transparente et conçue pour vous sur mesure.
 
-🖼️ LA RETOUCHE PHOTO À PORTÉE DE MAIN :
+🖼️ LA RETOUCHE PHOTO À PORTÉE DE MAIN :
 Améliorez vos photos avec notre éditeur de photos basique mais puissant. Recadrez, redimensionnez, pivotez, retournez, dessinez et appliquez des filtres époustouflants, le tout sans compromettre votre vie privée. Prenez le contrôle de vos souvenirs comme jamais auparavant.
 
-🌐 LA CONFIDENTIALITÉ AVANT TOUT, TOUJOURS :
-Votre vie privée compte. Laissez-tomber les géants avides de données. Fossify Gallery vous donne le contrôle. Retirez les métadonnées EXIF comme les coordonnées GPS et les détails de la caméra, pour garder vos souvenirs pour vous et vous seul.
+🌐 LA CONFIDENTIALITÉ AVANT TOUT, TOUJOURS :
+Votre vie privée compte. Laissez tomber les géants du numérique avides de données. Fossify Gallery vous rend le contrôle. Retirez les métadonnées EXIF comme les coordonnées GPS et les détails de l'appareil, pour garder vos souvenirs pour vous et vous seulement.
 
-🔒 SÉCURITÉ SUPÉRIEURE :
-Verrouillez vos souvenirs avec un code PIN, un schéma ou une empreinte digitale. Sécurisez des photos et vidéos spécifiques, ou toute l'application – vous décidez qui a accès. Tranquillité d'esprit garantie.
+🔒 SÉCURITÉ SUPÉRIEURE :
+Verrouillez vos souvenirs avec un code PIN, un schéma ou une empreinte digitale. Sécurisez des photos et vidéos spécifiques, ou toute l'application – vous décidez qui peut y accéder. Tranquillité d'esprit garantie.
 
-🔄 RESTAURATION FACILE :
+🔄 RESTAURATION FACILE :
 Respirez calmement, les accidents ça arrive ! La corbeille intégrée de Fossify Gallery vous permet de récupérer les photos et vidéos supprimées en quelques secondes. Plus de trésors perdus, juste un pur soulagement.
 
-🎨 VOTRE GALERIE, VOTRE STYLE :
-Personnalisez l'apparence, l'atmosphère et les fonctionnalités pour qu'elles correspondent à votre style. Des thèmes de l'interface aux boutons de fonctions, Fossify Gallery vous donne la liberté créative dont vous rêvez.
+🎨 VOTRE GALERIE, VOTRE STYLE :
+Personnalisez l'apparence, l'atmosphère et les fonctionnalités pour qu'elles correspondent à votre style. Des thèmes de l'interface aux boutons de fonctions, Fossify Gallery vous offre la liberté créative dont vous rêvez.
 
-📷 LIBERTÉ DE FORMAT UNIVERSEL :
-JPEG, PNG, MP4, MKV, RAW, SVG, GIF, vidéos, et bien plus – nous prenons en charge vos souvenirs, dans n'importe quel format de votre choix. Pas de restrictions, juste des possibilités illimitées.
+📷 LIBERTÉ DE FORMAT UNIVERSEL :
+JPEG, JPEG XL, PNG, MP4, MKV, RAW, SVG, GIF, vidéos, et bien plus – nous prenons en charge vos souvenirs, dans tous les formats de votre choix. Pas de restrictions, juste des possibilités illimitées.
 
-✨ MATERIAL DESIGN AVEC THÈMES DYNAMIQUES :
-Découvrez la beauté du material design intuitif avec des thèmes dynamiques. Vous en voulez plus ? Plongez dans des thèmes personnalisés et rendez votre galerie vraiment unique.
+✨ MATERIAL DESIGN AVEC THÈMES DYNAMIQUES :
+Découvrez la beauté du material design intuitif avec des thèmes dynamiques. Vous en voulez plus ? Plongez dans les thèmes personnalisés et rendez votre galerie vraiment unique.
 
-Explorez plus d'apps de Fossify : https://www.fossify.org
-Code open-source : https://www.github.com/FossifyOrg
-Rejoignez la communauté sur Reddit : https://www.reddit.com/r/Fossify
-Restez connecté via Telegram : https://t.me/Fossify
+Découvrez plus d'applis de Fossify : https://www.fossify.org
+Code open-source : https://www.github.com/FossifyOrg
+Rejoignez la communauté sur Reddit : https://www.reddit.com/r/Fossify
+Restez connecté via Telegram : https://t.me/Fossify

@@ -162,6 +162,7 @@
     <string name="scroll_thumbnails_horizontally">Przewijaj miniaturki w poziomie</string>
     <string name="hide_system_ui_at_fullscreen">Automatycznie ukrywaj interfejs systemu dla multimediów na pełnym ekranie</string>
     <string name="delete_empty_folders">Usuwaj puste foldery po usunięciu ich zawartości</string>
+    <string name="keep_screen_on_fullscreen_photos">Pozostawiaj ekran włączony podczas oglądania obrazów na pełnym ekranie</string>
     <string name="allow_photo_gestures">Zezwalaj na kontrolowanie jasności obrazów pionowymi gestami</string>
     <string name="allow_video_gestures">Zezwalaj na kontrolowanie głośności i jasności wideo pionowymi gestami</string>
     <string name="show_media_count">Pokazuj liczbę multimediów w folderze w widoku głównym</string>
@@ -172,13 +173,13 @@
     <string name="allow_deep_zooming_images">Zezwalaj na mocne powiększanie obrazów</string>
     <string name="hide_extended_details">Ukrywaj dodatkowe szczegóły, gdy pasek stanu jest ukryty</string>
     <string name="show_at_bottom">Pokazuj niektóre przyciski akcji na dole ekranu</string>
-    <string name="show_recycle_bin">Pokazuj kosz w widoku folderów</string>
+    <string name="show_recycle_bin">Pokazuj kosz na ekranie folderów</string>
     <string name="deep_zoomable_images">Mocne powiększanie obrazów</string>
     <string name="show_highest_quality">Pokazuj obrazy w najwyższej możliwej jakości</string>
     <string name="show_recycle_bin_last">Pokazuj kosz jako ostatni element na ekranie głównym</string>
     <string name="allow_down_gesture">Zezwalaj na zamykanie widoku pełnoekranowego gestem pociągnięcia w dół</string>
     <string name="allow_one_to_one_zoom">Zezwalaj na powiększanie 1:1 dwoma podwójnymi naciśnięciami</string>
-    <string name="open_videos_on_separate_screen">Zawsze otwieraj wideo na osobnym ekranie z innymi poziomymi gestami</string>
+    <string name="open_videos_on_separate_screen">Odtwarzaj wideo na osobnym ekranie z poziomymi gestami</string>
     <string name="show_notch">Pokazuj wycięcie ekranu, jeśli jest dostępne</string>
     <string name="allow_rotating_gestures">Zezwalaj na obracanie obrazów gestami</string>
     <string name="file_loading_priority">Priorytet ładowania plików</string>
@@ -253,4 +254,23 @@
     <string name="faq_18_title">Dlaczego widzę reklamy podczas odtwarzania wideo\?</string>
     <string name="faq_18_text">Nasze aplikacje nie mają żadnych reklam. Jeśli widzisz je podczas odtwarzania wideo, musisz używać odtwarzacza wideo innej aplikacji. Spróbuj znaleźć domyślny odtwarzacz wideo w ustawieniach urządzenia, a następnie wykonaj na nim „Wyczyść domyślne”. Następnym razem, gdy spróbujesz odtworzyć wideo, zobaczysz ekran wyboru aplikacji, gdzie możesz wybrać, którą chcesz użyć.</string>
     <string name="by_folder">Folder</string>
+    <string name="full_storage_permission_required">Fossify Gallery potrzebuje pełnego dostępu, aby wyświetlać wszystkie Twoje zdjęcia i wideo. Przejdź do Ustawień &gt; Uprawnienia &gt; Zdjęcia i filmy &gt; Zezwalaj.</string>
+    <string name="playback_speed">Prędkość odtwarzania</string>
+    <string name="failed_to_load_media">Nie udało się załadować multimediów.</string>
+    <string name="media_exceeds_device_capabilities">Plik przekracza możliwości urządzenia.</string>
+    <string name="unsupported_format">Nieobsługiwany format.</string>
+    <string name="file_is_malformed_or_corrupted">Plik jest wadliwy lub uszkodzony.</string>
+    <plurals name="restore_confirmation">
+        <item quantity="one">Czy przywrócić %d plik?</item>
+        <item quantity="few">Czy przywrócić %d pliki?</item>
+        <item quantity="many">Czy przywrócić %d plików?</item>
+        <item quantity="other">Czy przywrócić %d plików?</item>
+    </plurals>
+    <string name="force_landscape_reverse">Wymuś poziomą (odwrócona)</string>
+    <string name="overwrite_original">Nadpisz oryginał</string>
+    <string name="video_no_sound">To wideo nie ma dźwięku</string>
+    <string name="render_ultra_hdr_photos">Pokazuj obrazy Ultra HDR w HDR</string>
+    <string name="on_video_tap">Przy naciśnięciu wideo</string>
+    <string name="open_in_app_player">Otwórz wbudowany odtwarzacz</string>
+    <string name="open_system_default_player">Otwórz domyślną aplikację odtwarzacza</string>
 </resources>

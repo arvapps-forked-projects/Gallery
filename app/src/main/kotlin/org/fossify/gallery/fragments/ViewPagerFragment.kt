@@ -1,5 +1,6 @@
 package org.fossify.gallery.fragments
 
+import android.graphics.Point
 import android.provider.MediaStore
 import android.provider.MediaStore.Files
 import android.provider.MediaStore.Images
@@ -11,6 +12,7 @@ import org.fossify.gallery.extensions.config
 import org.fossify.gallery.helpers.*
 import org.fossify.gallery.models.Medium
 import java.io.File
+import com.awxkee.jxlcoder.JxlCoder
 
 abstract class ViewPagerFragment : Fragment() {
     var listener: FragmentListener? = null
@@ -35,11 +37,14 @@ abstract class ViewPagerFragment : Fragment() {
         fun launchViewVideoIntent(path: String)
 
         fun isSlideShowActive(): Boolean
+
+        fun isFullScreen(): Boolean
     }
 
     fun getMediumExtendedDetails(medium: Medium): String {
+        val context = context ?: return ""
         val file = File(medium.path)
-        if (context?.getDoesFilePathExist(file.absolutePath) == false) {
+        if (!context.getDoesFilePathExist(file.absolutePath)) {
             return ""
         }
 
@@ -51,7 +56,7 @@ abstract class ViewPagerFragment : Fragment() {
         }
 
         val details = StringBuilder()
-        val detailsFlag = context!!.config.extendedDetails
+        val detailsFlag = context.config.extendedDetails
         if (detailsFlag and EXT_NAME != 0) {
             medium.name.let { if (it.isNotEmpty()) details.appendLine(it) }
         }
@@ -65,7 +70,7 @@ abstract class ViewPagerFragment : Fragment() {
         }
 
         if (detailsFlag and EXT_RESOLUTION != 0) {
-            context!!.getResolution(file.absolutePath)?.formatAsResolution().let { if (it?.isNotEmpty() == true) details.appendLine(it) }
+            getResolution(medium, file)?.let { if (it.isNotEmpty()) details.appendLine(it) }
         }
 
         if (detailsFlag and EXT_LAST_MODIFIED != 0) {
@@ -73,7 +78,7 @@ abstract class ViewPagerFragment : Fragment() {
         }
 
         if (detailsFlag and EXT_DATE_TAKEN != 0) {
-            exif.getExifDateTaken(context!!).let { if (it.isNotEmpty()) details.appendLine(it) }
+            exif.getExifDateTaken(context).let { if (it.isNotEmpty()) details.appendLine(it) }
         }
 
         if (detailsFlag and EXT_CAMERA_MODEL != 0) {
@@ -90,20 +95,41 @@ abstract class ViewPagerFragment : Fragment() {
         return details.toString().trim()
     }
 
-    fun getPathToLoad(medium: Medium) = if (context?.isPathOnOTG(medium.path) == true) medium.path.getOTGPublicPath(context!!) else medium.path
+    fun getPathToLoad(medium: Medium): String {
+        val context = context ?: return medium.path
+        return if (context.isPathOnOTG(medium.path)) {
+            medium.path.getOTGPublicPath(context)
+        } else {
+            medium.path
+        }
+    }
+
+    private fun getResolution(medium: Medium, file: File): String? {
+        if (medium.name.endsWith(".jxl",ignoreCase = true)) {
+            val resolution = try {
+                JxlCoder.getSize(file.readBytes())
+            } catch (ignored: OutOfMemoryError) {
+                null
+            }
+            return resolution?.let { Point(it.width,it.height).formatAsResolution() }
+        } else {
+            return context?.getResolution(file.absolutePath)?.formatAsResolution()
+        }
+    }
 
     private fun getFileLastModified(file: File): String {
+        val context = context ?: return ""
         val projection = arrayOf(Images.Media.DATE_MODIFIED)
         val uri = Files.getContentUri("external")
         val selection = "${MediaStore.MediaColumns.DATA} = ?"
         val selectionArgs = arrayOf(file.absolutePath)
-        val cursor = context!!.contentResolver.query(uri, projection, selection, selectionArgs, null)
+        val cursor = context.contentResolver.query(uri, projection, selection, selectionArgs, null)
         cursor?.use {
             return if (cursor.moveToFirst()) {
                 val dateModified = cursor.getLongValue(Images.Media.DATE_MODIFIED) * 1000L
-                dateModified.formatDate(context!!)
+                dateModified.formatDate(context)
             } else {
-                file.lastModified().formatDate(context!!)
+                file.lastModified().formatDate(context)
             }
         }
         return ""

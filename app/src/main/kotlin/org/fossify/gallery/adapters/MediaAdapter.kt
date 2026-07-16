@@ -4,12 +4,12 @@ import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
-import android.os.Handler
-import android.os.Looper
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.allViews
 import com.bumptech.glide.Glide
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
@@ -18,29 +18,93 @@ import org.fossify.commons.adapters.MyRecyclerViewAdapter
 import org.fossify.commons.dialogs.PropertiesDialog
 import org.fossify.commons.dialogs.RenameDialog
 import org.fossify.commons.dialogs.RenameItemDialog
-import org.fossify.commons.extensions.*
-import org.fossify.commons.helpers.*
+import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
+import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.extensions.convertToBitmap
+import org.fossify.commons.extensions.formatSize
+import org.fossify.commons.extensions.getFilenameFromPath
+import org.fossify.commons.extensions.getFormattedDuration
+import org.fossify.commons.extensions.getOTGPublicPath
+import org.fossify.commons.extensions.getParentPath
+import org.fossify.commons.extensions.getTimeFormat
+import org.fossify.commons.extensions.handleDeletePasswordProtection
+import org.fossify.commons.extensions.hasOTGConnected
+import org.fossify.commons.extensions.internalStoragePath
+import org.fossify.commons.extensions.isAStorageRootFolder
+import org.fossify.commons.extensions.isAccessibleWithSAFSdk30
+import org.fossify.commons.extensions.isExternalStorageManager
+import org.fossify.commons.extensions.isImageFast
+import org.fossify.commons.extensions.isPathOnOTG
+import org.fossify.commons.extensions.isRestrictedWithSAFSdk30
+import org.fossify.commons.extensions.needsStupidWritePermissions
+import org.fossify.commons.extensions.recycleBinPath
+import org.fossify.commons.extensions.rescanPaths
+import org.fossify.commons.extensions.toast
+import org.fossify.commons.helpers.FAVORITES
+import org.fossify.commons.helpers.VIEW_TYPE_LIST
+import org.fossify.commons.helpers.ensureBackgroundThread
+import org.fossify.commons.helpers.isRPlus
+import org.fossify.commons.helpers.sumByLong
 import org.fossify.commons.models.FileDirItem
 import org.fossify.commons.views.MyRecyclerView
 import org.fossify.gallery.R
 import org.fossify.gallery.activities.ViewPagerActivity
-import org.fossify.gallery.databinding.*
+import org.fossify.gallery.databinding.PhotoItemGridBinding
+import org.fossify.gallery.databinding.PhotoItemListBinding
+import org.fossify.gallery.databinding.ThumbnailSectionBinding
+import org.fossify.gallery.databinding.VideoItemGridBinding
+import org.fossify.gallery.databinding.VideoItemListBinding
 import org.fossify.gallery.dialogs.DeleteWithRememberDialog
-import org.fossify.gallery.extensions.*
-import org.fossify.gallery.helpers.*
+import org.fossify.gallery.extensions.config
+import org.fossify.gallery.extensions.fixDateTaken
+import org.fossify.gallery.extensions.getShortcutImage
+import org.fossify.gallery.extensions.handleMediaManagementPrompt
+import org.fossify.gallery.extensions.launchResizeImageDialog
+import org.fossify.gallery.extensions.launchResizeMultipleImagesDialog
+import org.fossify.gallery.extensions.loadImage
+import org.fossify.gallery.extensions.openEditor
+import org.fossify.gallery.extensions.openPath
+import org.fossify.gallery.extensions.rescanFolderMedia
+import org.fossify.gallery.extensions.restoreRecycleBinPaths
+import org.fossify.gallery.extensions.saveRotatedImageToFile
+import org.fossify.gallery.extensions.setAs
+import org.fossify.gallery.extensions.shareMediaPaths
+import org.fossify.gallery.extensions.shareMediumPath
+import org.fossify.gallery.extensions.showRestoreConfirmationDialog
+import org.fossify.gallery.extensions.toggleFileVisibility
+import org.fossify.gallery.extensions.tryCopyMoveFilesTo
+import org.fossify.gallery.extensions.updateDBMediaPath
+import org.fossify.gallery.extensions.updateFavorite
+import org.fossify.gallery.extensions.updateFavoritePaths
+import org.fossify.gallery.helpers.PATH
+import org.fossify.gallery.helpers.RECYCLE_BIN
+import org.fossify.gallery.helpers.ROUNDED_CORNERS_BIG
+import org.fossify.gallery.helpers.ROUNDED_CORNERS_NONE
+import org.fossify.gallery.helpers.ROUNDED_CORNERS_SMALL
+import org.fossify.gallery.helpers.SHOW_ALL
+import org.fossify.gallery.helpers.SHOW_FAVORITES
+import org.fossify.gallery.helpers.SHOW_RECYCLE_BIN
+import org.fossify.gallery.helpers.TYPE_GIFS
+import org.fossify.gallery.helpers.TYPE_RAWS
 import org.fossify.gallery.interfaces.MediaOperationsListener
 import org.fossify.gallery.models.Medium
 import org.fossify.gallery.models.ThumbnailItem
 import org.fossify.gallery.models.ThumbnailSection
 
 class MediaAdapter(
-    activity: BaseSimpleActivity, var media: ArrayList<ThumbnailItem>, val listener: MediaOperationsListener?, val isAGetIntent: Boolean,
-    val allowMultiplePicks: Boolean, val path: String, recyclerView: MyRecyclerView, itemClick: (Any) -> Unit
-) :
-    MyRecyclerViewAdapter(activity, recyclerView, itemClick), RecyclerViewFastScroller.OnPopupTextUpdate {
+    activity: BaseSimpleActivity,
+    var media: ArrayList<ThumbnailItem>,
+    val listener: MediaOperationsListener?,
+    val isAGetIntent: Boolean,
+    val allowMultiplePicks: Boolean,
+    val path: String,
+    recyclerView: MyRecyclerView,
+    itemClick: (Any) -> Unit
+) : MyRecyclerViewAdapter(activity, recyclerView, itemClick),
+    RecyclerViewFastScroller.OnPopupTextUpdate {
 
-    private val INSTANT_LOAD_DURATION = 2000L
-    private val IMAGE_LOAD_DELAY = 100L
     private val ITEM_SECTION = 0
     private val ITEM_MEDIUM_VIDEO_PORTRAIT = 1
     private val ITEM_MEDIUM_PHOTO = 2
@@ -48,10 +112,7 @@ class MediaAdapter(
     private val config = activity.config
     private val viewType = config.getFolderViewType(if (config.showAll) SHOW_ALL else path)
     private val isListViewType = viewType == VIEW_TYPE_LIST
-    private var visibleItemPaths = ArrayList<String>()
     private var rotatedImagePaths = ArrayList<String>()
-    private var loadImageInstantly = false
-    private var delayHandler = Handler(Looper.getMainLooper())
     private var currentMediaHash = media.hashCode()
     private val hasOTGConnected = activity.hasOTGConnected()
 
@@ -67,7 +128,6 @@ class MediaAdapter(
 
     init {
         setupDragListener(true)
-        enableInstantLoad()
     }
 
     override fun getActionMenuId() = R.menu.cab_media
@@ -95,10 +155,6 @@ class MediaAdapter(
 
     override fun onBindViewHolder(holder: MyRecyclerViewAdapter.ViewHolder, position: Int) {
         val tmbItem = media.getOrNull(position) ?: return
-        if (tmbItem is Medium) {
-            visibleItemPaths.add(tmbItem.path)
-        }
-
         val allowLongPress = (!isAGetIntent || allowMultiplePicks) && tmbItem is Medium
         holder.bindView(tmbItem, tmbItem is Medium, allowLongPress) { itemView, adapterPosition ->
             if (tmbItem is Medium) {
@@ -141,7 +197,7 @@ class MediaAdapter(
             findItem(R.id.cab_resize).isVisible = canResize(selectedItems)
             findItem(R.id.cab_confirm_selection).isVisible = isAGetIntent && allowMultiplePicks && selectedKeys.isNotEmpty()
             findItem(R.id.cab_restore_recycle_bin_files).isVisible = selectedPaths.all { it.startsWith(activity.recycleBinPath) }
-            findItem(R.id.cab_create_shortcut).isVisible = isOreoPlus() && isOneItemSelected
+            findItem(R.id.cab_create_shortcut).isVisible = isOneItemSelected
 
             checkHideBtnVisibility(this, selectedItems)
             checkFavoriteBtnVisibility(this, selectedItems)
@@ -195,7 +251,6 @@ class MediaAdapter(
         super.onViewRecycled(holder)
         if (!activity.isDestroyed) {
             val itemView = holder.itemView
-            visibleItemPaths.remove(itemView.allViews.firstOrNull { it.id == R.id.medium_name }?.tag)
             val tmb = itemView.allViews.firstOrNull { it.id == R.id.medium_thumbnail }
             if (tmb != null) {
                 Glide.with(activity).clear(tmb)
@@ -252,7 +307,6 @@ class MediaAdapter(
                     activity.updateDBMediaPath(firstPath, it)
 
                     activity.runOnUiThread {
-                        enableInstantLoad()
                         listener?.refreshItems()
                         finishActMode()
                     }
@@ -260,7 +314,6 @@ class MediaAdapter(
             }
         } else {
             RenameDialog(activity, getSelectedPaths(), true) {
-                enableInstantLoad()
                 listener?.refreshItems()
                 finishActMode()
             }
@@ -336,7 +389,18 @@ class MediaAdapter(
     }
 
     private fun restoreFiles() {
-        activity.restoreRecycleBinPaths(getSelectedPaths()) {
+        val paths = getSelectedPaths()
+        if (paths.size > 1) {
+            activity.showRestoreConfirmationDialog(paths.size) {
+                doRestoreFiles(paths)
+            }
+        } else {
+            doRestoreFiles(paths)
+        }
+    }
+
+    private fun doRestoreFiles(paths: ArrayList<String>) {
+        activity.restoreRecycleBinPaths(paths) {
             listener?.refreshItems()
             finishActMode()
         }
@@ -431,10 +495,6 @@ class MediaAdapter(
     }
 
     private fun createShortcut() {
-        if (!isOreoPlus()) {
-            return
-        }
-
         val manager = activity.getSystemService(ShortcutManager::class.java)
         if (manager.isRequestPinShortcutSupported) {
             val path = getSelectedPaths().first()
@@ -570,7 +630,6 @@ class MediaAdapter(
         if (thumbnailItems.hashCode() != currentMediaHash) {
             currentMediaHash = thumbnailItems.hashCode()
             media = thumbnailItems
-            enableInstantLoad()
             notifyDataSetChanged()
             finishActMode()
         }
@@ -578,7 +637,6 @@ class MediaAdapter(
 
     fun updateDisplayFilenames(displayFilenames: Boolean) {
         this.displayFilenames = displayFilenames
-        enableInstantLoad()
         notifyDataSetChanged()
     }
 
@@ -597,13 +655,6 @@ class MediaAdapter(
         notifyDataSetChanged()
     }
 
-    private fun enableInstantLoad() {
-        loadImageInstantly = true
-        delayHandler.postDelayed({
-            loadImageInstantly = false
-        }, INSTANT_LOAD_DURATION)
-    }
-
     private fun setupThumbnail(view: View, medium: Medium) {
         val isSelected = selectedKeys.contains(medium.path.hashCode())
         bindItem(view, medium).apply {
@@ -619,7 +670,13 @@ class MediaAdapter(
 
             playPortraitOutline?.beVisibleIf(medium.isVideo() || medium.isPortrait())
             if (medium.isVideo()) {
-                playPortraitOutline?.setImageResource(org.fossify.commons.R.drawable.ic_play_vector)
+                playPortraitOutline?.setImageResource(
+                    if (isListViewType) {
+                        org.fossify.commons.R.drawable.ic_play_outline_vector
+                    } else {
+                        org.fossify.commons.R.drawable.ic_play_vector
+                    }
+                )
                 playPortraitOutline?.beVisible()
             } else if (medium.isPortrait()) {
                 playPortraitOutline?.setImageResource(R.drawable.ic_portrait_photo_vector)
@@ -648,6 +705,9 @@ class MediaAdapter(
                 videoDuration?.text = medium.videoDuration.getFormattedDuration()
             }
             videoDuration?.beVisibleIf(showVideoDuration)
+            if (isListViewType) {
+                videoDuration?.setTextColor(textColor)
+            }
 
             mediumCheck.beVisibleIf(isSelected)
             if (isSelected) {
@@ -670,23 +730,29 @@ class MediaAdapter(
                 else -> ROUNDED_CORNERS_NONE
             }
 
-            if (loadImageInstantly) {
-                activity.loadImage(
-                    medium.type, path, mediumThumbnail, scrollHorizontally, animateGifs, cropThumbnails, roundedCorners, medium.getKey(), rotatedImagePaths
-                )
-            } else {
-                mediumThumbnail.setImageDrawable(null)
-                mediumThumbnail.isHorizontalScrolling = scrollHorizontally
-                delayHandler.postDelayed({
-                    val isVisible = visibleItemPaths.contains(medium.path)
-                    if (isVisible) {
-                        activity.loadImage(
-                            medium.type, path, mediumThumbnail, scrollHorizontally, animateGifs, cropThumbnails, roundedCorners,
-                            medium.getKey(), rotatedImagePaths
-                        )
-                    }
-                }, IMAGE_LOAD_DELAY)
-            }
+            mediumThumbnail.setBackgroundResource(
+                when (roundedCorners) {
+                    ROUNDED_CORNERS_SMALL -> R.drawable.placeholder_rounded_small
+                    ROUNDED_CORNERS_BIG -> R.drawable.placeholder_rounded_big
+                    else -> R.drawable.placeholder_square
+                }
+            )
+
+            activity.loadImage(
+                type = medium.type,
+                path = path,
+                target = mediumThumbnail,
+                horizontalScroll = scrollHorizontally,
+                animateGifs = animateGifs,
+                cropThumbnails = cropThumbnails,
+                roundCorners = roundedCorners,
+                signature = medium.getKey(),
+                skipMemoryCacheAtPaths = rotatedImagePaths,
+                onError = {
+                    mediumThumbnail.scaleType = ImageView.ScaleType.CENTER
+                    mediumThumbnail.setImageDrawable(AppCompatResources.getDrawable(activity, R.drawable.ic_vector_warning_colored))
+                }
+            )
 
             if (isListViewType) {
                 mediumName.setTextColor(textColor)

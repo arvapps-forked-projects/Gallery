@@ -16,9 +16,14 @@ const val IS_THIRD_PARTY_INTENT = "is_third_party_intent"
 const val AUTOPLAY_VIDEOS = "autoplay_videos"
 const val REMEMBER_LAST_VIDEO_POSITION = "remember_last_video_position"
 const val LOOP_VIDEOS = "loop_videos"
-const val OPEN_VIDEOS_ON_SEPARATE_SCREEN = "open_videos_on_separate_screen"
+const val MUTE_VIDEOS = "mute_videos"
+const val GESTURE_VIDEO_PLAYER = "open_videos_on_separate_screen"
+const val VIDEO_PLAYER_TYPE = "video_player_type"
 const val ANIMATE_GIFS = "animate_gifs"
 const val MAX_BRIGHTNESS = "max_brightness"
+const val ULTRA_HDR_RENDERING = "ultra_hdr_rendering"
+const val PLAYBACK_SPEED = "playback_speed"
+const val PLAYBACK_SPEED_PROGRESS = "playback_speed_progress"
 const val CROP_THUMBNAILS = "crop_thumbnails"
 const val SHOW_THUMBNAIL_VIDEO_DURATION = "show_thumbnail_video_duration"
 const val SCREEN_ROTATION = "screen_rotation"
@@ -42,6 +47,7 @@ const val INCLUDED_FOLDERS = "included_folders"
 const val ALBUM_COVERS = "album_covers"
 const val HIDE_SYSTEM_UI = "hide_system_ui"
 const val DELETE_EMPTY_FOLDERS = "delete_empty_folders"
+const val KEEP_SCREEN_ON = "keep_screen_on"
 const val ALLOW_PHOTO_GESTURES = "allow_photo_gestures"
 const val ALLOW_VIDEO_GESTURES = "allow_video_gestures"
 const val TEMP_FOLDER_PATH = "temp_folder_path"
@@ -98,6 +104,7 @@ const val CUSTOM_FOLDERS_ORDER = "custom_folders_order"
 const val AVOID_SHOWING_ALL_FILES_PROMPT = "avoid_showing_all_files_prompt"
 const val SEARCH_ALL_FILES_BY_DEFAULT = "search_all_files_by_default"
 const val LAST_EXPORTED_FAVORITES_FOLDER = "last_exported_favorites_folder"
+const val SHOW_PERMISSION_RATIONALE = "show_permission_rationale"
 
 // slideshow
 const val SLIDESHOW_INTERVAL = "slideshow_interval"
@@ -130,6 +137,7 @@ const val SHOW_TEMP_HIDDEN_DURATION = 300000L
 const val CLICK_MAX_DURATION = 150
 const val CLICK_MAX_DISTANCE = 100
 const val MAX_CLOSE_DOWN_GESTURE_DURATION = 300
+const val MAX_ZOOM_EQUALITY_TOLERANCE = 0.01
 const val DRAG_THRESHOLD = 8
 const val MONTH_MILLISECONDS = MONTH_SECONDS * 1000L
 const val MIN_SKIP_LENGTH = 2000
@@ -153,10 +161,17 @@ const val SHOULD_INIT_FRAGMENT = "should_init_fragment"
 const val PORTRAIT_PATH = "portrait_path"
 const val SKIP_AUTHENTICATION = "skip_authentication"
 
+// editor
+const val TEMP_FOLDER_NAME = "images"
+
 // rotations
 const val ROTATE_BY_SYSTEM_SETTING = 0
 const val ROTATE_BY_DEVICE_ROTATION = 1
 const val ROTATE_BY_ASPECT_RATIO = 2
+
+// video player type
+const val VIDEO_PLAYER_APP = 0
+const val VIDEO_PLAYER_SYSTEM = 1
 
 // file loading priority
 const val PRIORITY_SPEED = 0
@@ -249,8 +264,6 @@ const val FOLDER_STYLE_ROUNDED_CORNERS = 2
 const val THUMBNAIL_FADE_DURATION_MS = 150
 
 fun getPermissionToRequest() = if (isTiramisuPlus()) PERMISSION_READ_MEDIA_IMAGES else PERMISSION_WRITE_STORAGE
-
-fun getRequiredPermission() = if (isUpsideDownCakePlus()) PERMISSION_READ_MEDIA_VISUAL_USER_SELECTED else getPermissionToRequest()
 
 fun getPermissionsToRequest(): Collection<Int> {
     val permissions = mutableListOf(getPermissionToRequest())
